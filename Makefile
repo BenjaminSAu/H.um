@@ -35,7 +35,7 @@ LDFLAGS = -g -L/comp/40/lib64 -L/usr/sup/cii40/lib64
 # All programs cii40 (Hanson binaries) and *may* need -lm (math)
 # 40locality is a catch-all for this assignment, netpbm is needed for pnm
 # rt is for the "real time" timing library, which contains the clock support
-LDLIBS = -lbitpack -lcii40-O1 -lum-dis -l40locality -lnetpbm -lm -lrt
+LDLIBS = -lbitpack -lcii40-O2 -lum-dis -l40locality -lnetpbm -lm -lrt
 
 # Collect all .h files in your directory.
 # This way, you can never forget to add
@@ -55,7 +55,7 @@ all: um
 
 # To get *any* .o file, compile its .c file with the following rule.
 %.o: %.c $(INCLUDES)
-	$(CC) $(CFLAGS) -c -O1 $< -o $@
+	$(CC) $(CFLAGS) -c -O2 $< -o $@
 
 
 ## Linking step (.o -> executable program)
