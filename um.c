@@ -1,4 +1,4 @@
-/* um.c 
+/* um.c
 James Cameron and Benjamin Auerbach
 Comp40 HW6
 */
@@ -30,21 +30,27 @@ Comp40 HW6
 #define LOAV_VAL_LSB 0
 #define LOAV_INS 13
 
+#define INS_MASK 0xF0000000
+#define LOAV_REG_MASK 0x0E000000
+#define LOAV_VAL_MASK 0x01ffffff
+#define REG_C_MASK 0x0000007
+#define REG_B_MASK 0x0000038
+#define REG_A_MASK 0x00001c0
 
 /*
 * Function: decode
 * Input: 3 ints and uint32_t
 * Returns: int
 * Does: Takes in a single word and breaks it down into the instruction and the
-*       three registers contained within. 
+*       three registers contained within.
 */
 int decode(uint32_t word, int *rA, int *rB, int *rC);
 /*
 * Function: load_ume
 * Input: int and FILE *
 * Returns: Mem_Obj
-* Does: Reads the initial UM instructions from the input file, returning a 
-*       memory with num_instructions insturctions loaded in seg 0. 
+* Does: Reads the initial UM instructions from the input file, returning a
+*       memory with num_instructions insturctions loaded in seg 0.
 */
 Mem_Obj load_um(FILE *um_file, int num_instructions);
 
@@ -80,7 +86,7 @@ int main(int argc, char const *argv[])
 /* Run each instruction from segment zero of memory */
     while (execute_val != HALT_RET)
     {
-        ins = decode(Memory_get(mem, 0, (uint32_t)program_counter), 
+        ins = decode(Memory_get(mem, 0, (uint32_t)program_counter),
             &rA, &rB, &rC);
         execute_val = execute(my_alu, mem, ins, rA, rB, rC);
         if (execute_val == HALT_RET) {
@@ -101,23 +107,37 @@ int main(int argc, char const *argv[])
 
 int decode(uint32_t word, int *rA, int *rB, int *rC)
 {
-    uint64_t ins;
+    uint32_t ins;
 
-    ins = Bitpack_getu((uint64_t)word, INS_WIDTH, INS_LSB);
+    // ins = Bitpack_getu((uint64_t)word, INS_WIDTH, INS_LSB);
+    ins = (word & INS_MASK) >> INS_LSB;
+    // printf("ins is %u\n", ins);
 
 /* Handle irregular format of Load Value instruction: */
     if(ins == LOAV_INS)
     {
-        *rA = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, LOAV_A_LSB);
+        // *rA = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, LOAV_A_LSB);
+        *rA = (word & LOAV_REG_MASK) >> LOAV_A_LSB;
+        // printf("rA is %u\n", *rA);
+
 /* rB used to store val for convenience, not a literal register */
-        *rB = (int)Bitpack_getu((uint64_t)word, VAL_WIDTH, LOAV_VAL_LSB);
+        // *rB = (int)Bitpack_getu((uint64_t)word, VAL_WIDTH, LOAV_VAL_LSB);
+        *rB = word & LOAV_VAL_MASK;
+        // printf("value is %u\n", *rB);
+
     }
 /* Default register storage format: */
     else
     {
-        *rA = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_A_LSB);
-        *rB = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_B_LSB);
-        *rC = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_C_LSB);
+        // *rA = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_A_LSB);
+        // *rB = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_B_LSB);
+        // *rC = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_C_LSB);
+        *rA = (word & REG_A_MASK) >> REG_A_LSB;
+        // printf("rA is %u\n", *rA);
+        *rB = (word & REG_B_MASK) >> REG_B_LSB;
+        // printf("rB is %u\n", *rB);
+        *rC = word & REG_C_MASK;
+        // printf("rC is %u\n", *rC);
     }
     return ins;
 }
