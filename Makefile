@@ -55,7 +55,7 @@ all: um
 
 # To get *any* .o file, compile its .c file with the following rule.
 %.o: %.c $(INCLUDES)
-	$(CC) $(CFLAGS) -c -O2 $< -o $@
+	$(CC) $(CFLAGS) -c -O3 $< -o $@
 
 
 ## Linking step (.o -> executable program)
