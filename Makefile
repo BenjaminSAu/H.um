@@ -1,5 +1,5 @@
 # Makefile for locality (Comp 40 Assignment 3)
-# 
+#
 # Includes build rules for a2test and ppmtrans.
 #
 # This Makefile is more verbose than necessary.  In each assignment
@@ -19,11 +19,11 @@ IFLAGS = -I/comp/40/include -I/usr/sup/cii40/include/cii
 # Set debugging information, allow the c99 standard,
 # max out warnings, and use the updated include path
 # CFLAGS = -g -std=c99 -Wall -Wextra -Werror -Wfatal-errors -pedantic $(IFLAGS)
-# 
+#
 # For this assignment, we have to change things a little.  We need
 # to use the GNU 99 standard to get the right items in time.h for the
 # the timing support to compile.
-# 
+#
 CFLAGS = -g -std=gnu99 -Wall -Wextra -Werror -Wfatal-errors -pedantic $(IFLAGS)
 
 # Linking flags
@@ -42,8 +42,8 @@ LDLIBS = -lbitpack -lum-dis -l40locality -lnetpbm -lcii40 -lm -lrt
 # a local .h file in your dependencies.
 #
 # This bugs Mark, who dislikes false dependencies, but
-# he agrees with Noah that you'll probably spend hours 
-# debugging if you forget to put .h files in your 
+# he agrees with Noah that you'll probably spend hours
+# debugging if you forget to put .h files in your
 # dependency list.
 INCLUDES = $(shell echo *.h)
 
@@ -55,7 +55,7 @@ all: um
 
 # To get *any* .o file, compile its .c file with the following rule.
 %.o: %.c $(INCLUDES)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c -O1 $< -o $@
 
 
 ## Linking step (.o -> executable program)
