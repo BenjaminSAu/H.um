@@ -17,20 +17,20 @@ typedef struct Alu_Obj
   Input: 4 ints, Mem_Obj, Alu_Obj
   Returns: int
   Does: Takes in the instruction and registers needed for
-         an instruction and executes the correct instruction. 
+         an instruction and executes the correct instruction.
          Return is a signifier of the state of the program counter.
 */
 extern int execute(Alu_Obj alu, Mem_Obj mem, int ins, int rA, int rB, int rC);
 /*Name: Alu_new
   Inputs: none
   Returns: Alu_obj
-  Does: Creates and initializes ALU 
+  Does: Creates and initializes ALU
 */
 extern Alu_Obj Alu_new();
 /*Name: Alu_free
   Inputs: Alu_obj *
   Returns: void
-  Does: Frees ALU 
+  Does: Frees ALU
 */
 extern void Alu_free(Alu_Obj *alu);
 

@@ -60,5 +60,5 @@ all: um
 
 ## Linking step (.o -> executable program)
 
-um: um.o alu.o memory.o
+um: um.o alu.o
 	$(CC) $(LDFLAGS) $^ -o $@ $(LDLIBS)
