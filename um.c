@@ -66,6 +66,7 @@ int main(int argc, char const *argv[])
     struct stat file_info;
     stat(argv[1], &file_info);
     int num_instructions = file_info.st_size / NUM_BYTES;
+    fprintf(stderr, "Num instructions: %d\n", num_instructions);
 
     FILE *um_file = fopen(argv[1], "r");
     assert(um_file != NULL);
@@ -108,36 +109,20 @@ int main(int argc, char const *argv[])
 int decode(uint32_t word, int *rA, int *rB, int *rC)
 {
     uint32_t ins;
-
-    // ins = Bitpack_getu((uint64_t)word, INS_WIDTH, INS_LSB);
     ins = (word & INS_MASK) >> INS_LSB;
-    // printf("ins is %u\n", ins);
-
 /* Handle irregular format of Load Value instruction: */
     if(ins == LOAV_INS)
     {
-        // *rA = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, LOAV_A_LSB);
         *rA = (word & LOAV_REG_MASK) >> LOAV_A_LSB;
-        // printf("rA is %u\n", *rA);
-
 /* rB used to store val for convenience, not a literal register */
-        // *rB = (int)Bitpack_getu((uint64_t)word, VAL_WIDTH, LOAV_VAL_LSB);
         *rB = word & LOAV_VAL_MASK;
-        // printf("value is %u\n", *rB);
-
     }
 /* Default register storage format: */
     else
     {
-        // *rA = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_A_LSB);
-        // *rB = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_B_LSB);
-        // *rC = (int)Bitpack_getu((uint64_t)word, REG_WIDTH, REG_C_LSB);
         *rA = (word & REG_A_MASK) >> REG_A_LSB;
-        // printf("rA is %u\n", *rA);
         *rB = (word & REG_B_MASK) >> REG_B_LSB;
-        // printf("rB is %u\n", *rB);
         *rC = word & REG_C_MASK;
-        // printf("rC is %u\n", *rC);
     }
     return ins;
 }
