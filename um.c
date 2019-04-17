@@ -65,8 +65,7 @@ int main(int argc, char const *argv[])
 /* Retrieve number of instructions from given file */
     struct stat file_info;
     stat(argv[1], &file_info);
-    int num_instructions = file_info.st_size / NUM_BYTES;
-    fprintf(stderr, "Num instructions: %d\n", num_instructions);
+    int num_instructions = file_info.st_size / NUM_BYTES
 
     FILE *um_file = fopen(argv[1], "r");
     assert(um_file != NULL);
