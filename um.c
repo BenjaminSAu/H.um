@@ -105,6 +105,8 @@ int main(int argc, char const *argv[])
 /* Run each instruction from segment zero of memory */
     while (execute_val != HALT_RET)
     {
+      // fprintf(stderr, "Zero_seg at 0: %u\n", mem->seg_zero[0]);
+      // fprintf(stderr, "prg counter: %u\n", program_counter);
         ins = decode(mem->seg_zero[program_counter], &rA, &rB, &rC);
         execute_val = execute(my_alu, mem, ins, rA, rB, rC);
         if (execute_val == HALT_RET) {
@@ -211,7 +213,7 @@ uint32_t Memory_get(Mem_Obj mem, int seg_id, int offset)
         assert(mem != NULL);
         if (seg_id != 0) {
           uint32_t **segment = (uint32_t **)UArray_at(mem->segments, seg_id);
-          return (*segment)[offset];
+          return (*segment)[offset + 1];
         }
         else {
           return mem->seg_zero[offset];
@@ -223,7 +225,7 @@ void Memory_put(Mem_Obj mem, int seg_id, int offset, uint32_t word)
         assert(mem != NULL);
         if (seg_id != 0) {
             uint32_t **segment = (uint32_t **)UArray_at(mem->segments, seg_id);
-            (*segment)[offset] = word;
+            (*segment)[offset + 1] = word;
             return;
         }
         mem->seg_zero[offset] = word;
@@ -251,9 +253,9 @@ uint32_t Memory_map(Mem_Obj mem, int length)
                 free(seg_ptr);
         }
         uint32_t **new_seg = (uint32_t **)UArray_at(mem->segments, seg_id);
-        *new_seg = calloc(length, sizeof(uint32_t));
+        *new_seg = calloc(length + 1, sizeof(uint32_t));
         assert(*new_seg != NULL);
-
+        *new_seg[0] = (uint32_t)length;
         // *new_seg = UArray_new(length, sizeof(uint32_t));
         return (uint32_t)seg_id;
 }
@@ -272,18 +274,18 @@ void Memory_unmap(Mem_Obj mem, int seg_id)
 
 void Memory_load(Mem_Obj mem, int seg_id)
 {
-        UArray_T *load_seg;
-        load_seg = (UArray_T *)UArray_at(mem->segments, seg_id);
+        uint32_t **load_seg = (uint32_t **)UArray_at(mem->segments, seg_id);
         free(mem->seg_zero);
         mem->seg_zero = NULL;
-        unsigned seg_length = UArray_length(*load_seg);
-        mem->seg_zero = malloc(sizeof(uint32_t) * seg_length);
+        uint32_t seg_length = (*load_seg)[0];
+        fprintf(stderr, "seg_id %d seg_length %u\n", seg_id, seg_length);
+        mem->seg_zero = malloc(sizeof(uint32_t *) * (seg_length - 1));
         assert(mem->seg_zero != NULL);
 
-        for (unsigned i = 0; i < seg_length; i++)
+        for (unsigned i = 1; i < seg_length; i++)
         {
-
-            mem->seg_zero[i] = *((uint32_t *)(uintptr_t)UArray_at(*load_seg, i));
+            mem->seg_zero[i - 1] = (*load_seg)[i];
+            // fprintf(stderr, "setting %u\n", mem->seg_zero[i-1]);
         }
         return;
 }
