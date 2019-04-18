@@ -27,8 +27,8 @@ static void load_prog(Alu_Obj alu, Mem_Obj mem, int rB);
 enum Instructions {CMOVE, SEGL, SEGS, ADD, MLT, DIV, NAND, HALT, MSEG, USEG,
     OUT, IN, LOAP, LOAV};
 
-    Alu_Obj Alu_new()
-    {
+Alu_Obj Alu_new()
+{
         Alu_Obj my_Alu = malloc(sizeof(*my_Alu));
         assert(my_Alu != NULL);
         for(int i = 0; i < 8; i++)
