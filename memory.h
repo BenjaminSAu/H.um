@@ -14,6 +14,7 @@ typedef struct Mem_Obj
 {
         UArray_T segments;
         Seq_T unmapped;
+        uint32_t *seg_zero;
         unsigned counter;
 } *Mem_Obj;
 

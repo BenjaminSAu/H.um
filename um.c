@@ -86,8 +86,7 @@ int main(int argc, char const *argv[])
 /* Run each instruction from segment zero of memory */
     while (execute_val != HALT_RET)
     {
-        ins = decode(Memory_get(mem, 0, (uint32_t)program_counter),
-            &rA, &rB, &rC);
+        ins = decode(mem->seg_zero[program_counter], &rA, &rB, &rC);
         execute_val = execute(my_alu, mem, ins, rA, rB, rC);
         if (execute_val == HALT_RET) {
             break;
@@ -129,7 +128,9 @@ int decode(uint32_t word, int *rA, int *rB, int *rC)
 Mem_Obj load_um(FILE *um_file, int num_instructions)
 {
     Mem_Obj mem = Memory_new();
-    Memory_map(mem, num_instructions);
+    mem->seg_zero = malloc(sizeof(uint32_t) * num_instructions);
+    assert(mem->seg_zero != NULL);
+    Memory_map(mem, 0);
 
     uint64_t ins_word = 0;
     int char_con = 0;
@@ -145,7 +146,7 @@ Mem_Obj load_um(FILE *um_file, int num_instructions)
         ins_word = Bitpack_newu(ins_word, WORD_WIDTH, 8, char_con);
         char_con = fgetc(um_file);
         ins_word = Bitpack_newu(ins_word, WORD_WIDTH, 0, char_con);
-        Memory_put(mem, 0, i, (uint32_t)ins_word);
+        mem->seg_zero[i] = (uint32_t)ins_word;
     }
     return mem;
 }
@@ -188,18 +189,29 @@ void Memory_free(Mem_Obj *mem)
 uint32_t Memory_get(Mem_Obj mem, int seg_id, int offset)
 {
         assert(mem != NULL);
-        UArray_T *segment = (UArray_T *)UArray_at(mem->segments, seg_id);
-        uint32_t *return_word = (uint32_t *)(uintptr_t)UArray_at(*segment,
-                                                                  offset);
+        uint32_t *return_word = NULL;
+        if (seg_id != 0) {
+          UArray_T *segment = (UArray_T *)UArray_at(mem->segments, seg_id);
+          return_word = (uint32_t *)(uintptr_t)UArray_at(*segment,
+                                                                    offset);
+        }
+        else {
+          return mem->seg_zero[offset];
+        }
+
         return *return_word;
 }
 
 void Memory_put(Mem_Obj mem, int seg_id, int offset, uint32_t word)
 {
         assert(mem != NULL);
-        UArray_T *segment = (UArray_T *)UArray_at(mem->segments, seg_id);
-        uint32_t *located = (uint32_t *)(uintptr_t)UArray_at(*segment, offset);
-        *located = word;
+        if (seg_id != 0) {
+            UArray_T *segment = (UArray_T *)UArray_at(mem->segments, seg_id);
+            uint32_t *located = (uint32_t *)(uintptr_t)UArray_at(*segment, offset);
+            *located = word;
+            return;
+        }
+        mem->seg_zero[offset] = word;
         return;
 }
 
@@ -243,15 +255,18 @@ void Memory_unmap(Mem_Obj mem, int seg_id)
 
 void Memory_load(Mem_Obj mem, int seg_id)
 {
-        UArray_T *zero_seg;
         UArray_T *load_seg;
-        UArray_T *copy_seg;
-        zero_seg = (UArray_T *)UArray_at(mem->segments, 0);
         load_seg = (UArray_T *)UArray_at(mem->segments, seg_id);
-        UArray_T copy_seg_holder = UArray_copy(*load_seg,
-                                UArray_length(*load_seg));
-        copy_seg = &copy_seg_holder;
-        UArray_free(&(*zero_seg));
-        *zero_seg = *copy_seg;
+        free(mem->seg_zero);
+        mem->seg_zero = NULL;
+        int seg_length = UArray_length(*load_seg);
+        mem->seg_zero = malloc(sizeof(uint32_t) * seg_length);
+        assert(mem->seg_zero != NULL);
+
+        for (int i = 0; i < seg_length; i++)
+        {
+
+            mem->seg_zero[i] = *((uint32_t *)(uintptr_t)UArray_at(*load_seg, i));
+        }
         return;
 }

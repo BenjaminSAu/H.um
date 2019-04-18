@@ -126,7 +126,6 @@ static inline void output(Alu_Obj alu, int rC)
 static inline void input(Alu_Obj alu, int rC)
 {
         int in = fgetc(stdin);
-// fprintf(stderr, "%d\n", in);
         assert(in <= 255);
         if (in == EOF) {
                 alu->registers[rC] = ~0U;
@@ -176,7 +175,6 @@ static inline void divide(Alu_Obj alu, int rA, int rB, int rC)
 static inline void nand(Alu_Obj alu, int rA, int rB, int rC)
 {
         alu->registers[rA] = ~(alu->registers[rB] & alu->registers[rC]);
-// fprintf(stderr, "%u\n", alu->registers[rA]);
         return;
 }
 /* Function: cond_move
