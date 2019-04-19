@@ -11,7 +11,7 @@ Comp40 HW6
 #include <assert.h>
 #include <um-dis.h>
 #include <seq.h>
-#include "alu.h"
+#include "memory.h"
 
 #define WORD_WIDTH 8
 #define REG_WIDTH 3
@@ -40,22 +40,32 @@ Comp40 HW6
 #define TWOTO32 4294967296
 #define CONTINUE -2
 
-static void load_value(Alu_Obj alu, int rA, int rB);
-static void output(Alu_Obj alu, int rC);
-static void input(Alu_Obj alu, int rC);
-static void add(Alu_Obj alu, int rA, int rB, int rC);
-static void multiply(Alu_Obj alu, int rA, int rB, int rC);
-static void divide(Alu_Obj alu, int rA, int rB, int rC);
-static void nand(Alu_Obj alu, int rA, int rB, int rC);
-static void cond_move(Alu_Obj alu, int rA, int rB, int rC);
-static void seg_load(Alu_Obj alu, Mem_Obj mem, int rA, int rB, int rC);
-static void seg_store(Alu_Obj alu, Mem_Obj mem, int rA, int rB, int rC);
-static void map_seg(Alu_Obj alu, Mem_Obj mem, int rB, int rC);
-static void unmap_seg(Alu_Obj alu, Mem_Obj mem, int rC);
-static void load_prog(Alu_Obj alu, Mem_Obj mem, int rB);
+static void load_value(int rA, int rB);
+static void output(int rC);
+static void input(int rC);
+static void add(int rA, int rB, int rC);
+static void multiply(int rA, int rB, int rC);
+static void divide(int rA, int rB, int rC);
+static void nand(int rA, int rB, int rC);
+static void cond_move(int rA, int rB, int rC);
+static void seg_load(Mem_Obj mem, int rA, int rB, int rC);
+static void seg_store(Mem_Obj mem, int rA, int rB, int rC);
+static void map_seg(Mem_Obj mem, int rB, int rC);
+static void unmap_seg(Mem_Obj mem, int rC);
+static void load_prog(Mem_Obj mem, int rB);
+
+uint32_t registers[8];
 
 enum Instructions {CMOVE, SEGL, SEGS, ADD, MLT, DIV, NAND, HALT, MSEG, USEG,
     OUT, IN, LOAP, LOAV};
+int execute(Mem_Obj mem, int ins, int rA, int rB, int rC);
+/*Name: Alu_new
+  Inputs: none
+  Returns: Alu_obj
+  Does: Creates and initializes ALU
+*/
+
+
 /*
 * Function: decode
 * Input: 3 ints and uint32_t
@@ -93,8 +103,6 @@ int main(int argc, char const *argv[])
 
     fclose(um_file);
 
-    Alu_Obj my_alu = Alu_new();
-
     int rA = 0;
     int rB = 0;
     int rC = 0;
@@ -108,7 +116,7 @@ int main(int argc, char const *argv[])
       // fprintf(stderr, "Zero_seg at 0: %u\n", mem->seg_zero[0]);
       // fprintf(stderr, "prg counter: %u\n", program_counter);
         ins = decode(mem->seg_zero[program_counter], &rA, &rB, &rC);
-        execute_val = execute(my_alu, mem, ins, rA, rB, rC);
+        execute_val = execute(mem, ins, rA, rB, rC);
         if (execute_val == HALT_RET) {
             break;
         }
@@ -120,7 +128,6 @@ int main(int argc, char const *argv[])
         }
     }
 
-    Alu_free(&my_alu);
     Memory_free(&mem);
     return EXIT_SUCCESS;
 }
@@ -303,71 +310,54 @@ void Memory_load(Mem_Obj mem, int seg_id)
         return;
 }
 
-Alu_Obj Alu_new()
-{
-        Alu_Obj my_Alu = malloc(sizeof(*my_Alu));
-        assert(my_Alu != NULL);
-        for(int i = 0; i < 8; i++)
-        {
-                my_Alu->registers[i] = 0;
-        }
-        return my_Alu;
-}
-
-void Alu_free(Alu_Obj *alu)
-{
-        free(*alu);
-        return;
-}
-
-int execute(Alu_Obj alu, Mem_Obj mem, int ins, int rA, int rB, int rC)
+int execute(Mem_Obj mem, int ins, int rA, int rB, int rC)
 {
         enum Instructions input_ins;
         input_ins = ins;
         switch(input_ins)
         {
                 case LOAV:
-                load_value(alu, rA, rB);
+                load_value(rA, rB);
                 break;
                 case CMOVE:
-                cond_move(alu, rA, rB, rC);
+                cond_move(rA, rB, rC);
                 break;
                 case SEGL:
-                seg_load(alu, mem, rA, rB, rC);
+                seg_load(mem, rA, rB, rC);
                 break;
                 case SEGS:
-                seg_store(alu, mem, rA, rB, rC);
+                seg_store(mem, rA, rB, rC);
                 break;
                 case ADD:
-                add(alu, rA, rB, rC);
+                add(rA, rB, rC);
                 break;
                 case MLT:
-                multiply(alu, rA, rB, rC);
+                multiply(rA, rB, rC);
                 break;
                 case DIV:
-                divide(alu, rA, rB, rC);
+                divide(rA, rB, rC);
                 break;
                 case NAND:
-                nand(alu, rA, rB, rC);
+                nand(rA, rB, rC);
                 break;
                 case HALT:
                 return -1;
                 break;
                 case MSEG:
-                map_seg(alu, mem, rB, rC);
+                map_seg(mem, rB, rC);
                 break;
                 case USEG:
-                unmap_seg(alu, mem, rC);
+                unmap_seg(mem, rC);
                 break;
                 case OUT:
-                output(alu, rC);
+                output(rC);
                 break;
                 case IN:
-                input(alu, rC);
+                input(rC);
                 break;
                 case LOAP:
-                load_prog(alu, mem, rB);
-                return alu->registers[rC];
+                load_prog(mem, rB);
+                return registers[rC];
                 break;
         }
         return CONTINUE;
@@ -378,9 +368,9 @@ int execute(Alu_Obj alu, Mem_Obj mem, int ins, int rA, int rB, int rC)
 * Returns: None
 * Does: Loads a value into a register
 */
-static inline void load_value(Alu_Obj alu, int rA, int rB)
+static inline void load_value(int rA, int rB)
 {
-        alu->registers[rA] = rB;
+        registers[rA] = rB;
         return;
 }
 /* Function: output
@@ -388,10 +378,10 @@ static inline void load_value(Alu_Obj alu, int rA, int rB)
 * Returns: None
 * Does: Prints a register as a character
 */
-static inline void output(Alu_Obj alu, int rC)
+static inline void output(int rC)
 {
-        assert(alu->registers[rC] <= 255);
-        fprintf(stdout, "%c", (char)alu->registers[rC]);
+        assert(registers[rC] <= 255);
+        fprintf(stdout, "%c", (char)registers[rC]);
         return;
 }
 /* Function: input
@@ -399,15 +389,15 @@ static inline void output(Alu_Obj alu, int rC)
 * Returns: None
 * Does: Saves a character's ASCII value into a register
 */
-static inline void input(Alu_Obj alu, int rC)
+static inline void input(int rC)
 {
         int in = fgetc(stdin);
         assert(in <= 255);
         if (in == EOF) {
-                alu->registers[rC] = ~0U;
+                registers[rC] = ~0U;
         }
         else {
-                alu->registers[rC] = in;
+                registers[rC] = in;
         }
         return;
 }
@@ -416,9 +406,9 @@ static inline void input(Alu_Obj alu, int rC)
 * Returns: None
 * Does: Adds the values of 2 registers, and stores the result in a 3rd
 */
-static inline void add(Alu_Obj alu, int rA, int rB, int rC)
+static inline void add(int rA, int rB, int rC)
 {
-        alu->registers[rA] = (alu->registers[rB] + alu->registers[rC])
+        registers[rA] = (registers[rB] + registers[rC])
                                                             % TWOTO32;
         return;
 }
@@ -427,9 +417,9 @@ static inline void add(Alu_Obj alu, int rA, int rB, int rC)
 * Returns: None
 * Does: Multipliess the values of 2 registers, and stores the result in a 3rd
 */
-static inline void multiply(Alu_Obj alu, int rA, int rB, int rC)
+static inline void multiply(int rA, int rB, int rC)
 {
-        alu->registers[rA] = (alu->registers[rB] * alu->registers[rC])
+        registers[rA] = (registers[rB] * registers[rC])
                                                         % TWOTO32;
         return;
 }
@@ -438,9 +428,9 @@ static inline void multiply(Alu_Obj alu, int rA, int rB, int rC)
 * Returns: None
 * Does: Divides the values of 2 registers, and stores the result in a 3rd
 */
-static inline void divide(Alu_Obj alu, int rA, int rB, int rC)
+static inline void divide(int rA, int rB, int rC)
 {
-        alu->registers[rA] = alu->registers[rB] / alu->registers[rC];
+        registers[rA] = registers[rB] / registers[rC];
         return;
 }
 /* Function: nand
@@ -448,20 +438,20 @@ static inline void divide(Alu_Obj alu, int rA, int rB, int rC)
 * Returns: None
 * Does: Bitwise nand's the values of 2 registers, stores the result in a 3rd
 */
-static inline void nand(Alu_Obj alu, int rA, int rB, int rC)
+static inline void nand(int rA, int rB, int rC)
 {
-        alu->registers[rA] = ~(alu->registers[rB] & alu->registers[rC]);
+        registers[rA] = ~(registers[rB] & registers[rC]);
         return;
 }
 /* Function: cond_move
-* Inputs: Alu_Obj, 3 ints        alu->registers[rA] = alu->registers[rB] / alu->registers[rC];
+* Inputs: Alu_Obj, 3 ints        registers[rA] = registers[rB] / registers[rC];
 * Returns: None
 * Does: Moves value of rB into rA when rC is not 0
 */
-static inline void cond_move(Alu_Obj alu, int rA, int rB, int rC)
+static inline void cond_move(int rA, int rB, int rC)
 {
-        if (alu->registers[rC] != 0) {
-                alu->registers[rA] = alu->registers[rB];
+        if (registers[rC] != 0) {
+                registers[rA] = registers[rB];
         }
         return;
 }
@@ -471,10 +461,10 @@ static inline void cond_move(Alu_Obj alu, int rA, int rB, int rC)
 * Does: Grabs a piece of memory identified by 2 registers, and stores the
         result in a 3rd
 */
-static inline void seg_load(Alu_Obj alu, Mem_Obj mem, int rA, int rB, int rC)
+static inline void seg_load(Mem_Obj mem, int rA, int rB, int rC)
 {
-        alu->registers[rA] = Memory_get(mem, alu->registers[rB],
-                                            alu->registers[rC]);
+        registers[rA] = Memory_get(mem, registers[rB],
+                                            registers[rC]);
         return;
 }
 /* Function: seg_store
@@ -483,10 +473,10 @@ static inline void seg_load(Alu_Obj alu, Mem_Obj mem, int rA, int rB, int rC)
 * Does: Stores a register value at memory location identified by 2 registers,
          and stores the result in a 3rd
 */
-static inline void seg_store(Alu_Obj alu, Mem_Obj mem, int rA, int rB, int rC)
+static inline void seg_store(Mem_Obj mem, int rA, int rB, int rC)
 {
-        Memory_put(mem, alu->registers[rA], alu->registers[rB],
-                                           alu->registers[rC]);
+        Memory_put(mem, registers[rA], registers[rB],
+                                           registers[rC]);
         return;
 }
 /* Function: map_seg
@@ -495,9 +485,9 @@ static inline void seg_store(Alu_Obj alu, Mem_Obj mem, int rA, int rB, int rC)
 * Does: Creates a new memory segment (length defined in rC) and stores ID
 *       in rB
 */
-static inline void map_seg(Alu_Obj alu, Mem_Obj mem, int rB, int rC)
+static inline void map_seg(Mem_Obj mem, int rB, int rC)
 {
-        alu->registers[rB] = (uint32_t)Memory_map(mem, alu->registers[rC]);
+        registers[rB] = (uint32_t)Memory_map(mem, registers[rC]);
         return;
 }
 /* Function: unmap_seg
@@ -505,9 +495,9 @@ static inline void map_seg(Alu_Obj alu, Mem_Obj mem, int rB, int rC)
 * Returns: None
 * Does: Removes the memory segment specified in rC
 */
-static inline void unmap_seg(Alu_Obj alu, Mem_Obj mem, int rC)
+static inline void unmap_seg(Mem_Obj mem, int rC)
 {
-        Memory_unmap(mem, alu->registers[rC]);
+        Memory_unmap(mem, registers[rC]);
         return;
 }
 /* Function: load_prog
@@ -515,11 +505,11 @@ static inline void unmap_seg(Alu_Obj alu, Mem_Obj mem, int rC)
 * Returns: None
 * Does: Loads a segment specified by rB into seg 0
 */
-static inline void load_prog(Alu_Obj alu, Mem_Obj mem, int rB)
+static inline void load_prog(Mem_Obj mem, int rB)
 {
-        if(alu->registers[rB] != 0)
+        if(registers[rB] != 0)
         {
-                Memory_load(mem, alu->registers[rB]);
+                Memory_load(mem, registers[rB]);
         }
         return;
 }
